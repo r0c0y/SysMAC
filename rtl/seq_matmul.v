@@ -1,3 +1,9 @@
+`timescale 1ns/1ps
+
+// SysMAC: Systolic Array Matrix Multiplication Accelerator
+// Module: seq_matmul
+// Author: Priyanshu Tomar
+//
 // Sequential baseline: C = A x B with ONE multiply-accumulate unit, the way
 // a CPU triple loop does it. Same ports and same handshake as
 // systolic_accelerator_top, so the same testbench and vectors drive both.

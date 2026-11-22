@@ -12,7 +12,11 @@
 //   - done must last exactly one cycle
 //   - a_flat/b_flat are scrambled right after LOAD, so a design that reads
 //     its inputs after LOAD instead of the latched copy fails
-//   - every 4th job pulses start again mid-compute; it must be ignored
+//   - start pulses that arrive while the design is busy must be ignored:
+//     job % 4 == 3 pulses start during the compute phase,
+//     job % 4 == 1 pulses start in the last busy cycle (CAPTURE on the
+//     systolic top), job % 4 == 2 pulses start while done is high
+//   - exactly EXPECTED_JOBS jobs must run, so a missing vector file fails
 // Jobs run back to back with no reset. Run from the repo root.
 module tb_matmul_vectors;
 `ifdef SYSTOLIC
@@ -21,6 +25,7 @@ module tb_matmul_vectors;
     localparam LAT = 29;            // sample start, LOAD, COMPUTE 27
 `endif
     localparam MAX_JOBS = 112;
+    parameter  EXPECTED_JOBS = 112;
 
     reg          clk = 0, reset = 1, start = 0;
     reg  [71:0]  a_flat = 0, b_flat = 0;
@@ -59,8 +64,11 @@ module tb_matmul_vectors;
             @(negedge clk) start = 0;
             cycles = cycles + 1;
             while (!done && cycles < LAT + 40) begin
+                // job % 4 == 1: start high when the last busy cycle is sampled
+                start = (idx % 4 == 1) && (cycles == LAT - 1);
                 @(posedge clk); cycles = cycles + 1; #1;
             end
+            start = 0;
             jobs = jobs + 1;
             if (cycles != LAT) begin
                 errors = errors + 1;
@@ -73,8 +81,10 @@ module tb_matmul_vectors;
                              $signed(c_flat[e*32 +: 32]), $signed(vc[idx][e*32 +: 32]));
                 end
             done_len = 0;
+            start = (idx % 4 == 2);                     // sampled while done is high
             while (done && done_len < 5) begin
                 @(posedge clk); #1; done_len = done_len + 1;
+                start = 0;
             end
             if (done_len != 1) begin
                 errors = errors + 1;
@@ -106,7 +116,12 @@ module tb_matmul_vectors;
             if (va[n] !== 72'bx) run_job(n);
 
         $display("jobs=%0d errors=%0d latency=%0d cycles", jobs, errors, LAT);
-        if (errors == 0 && jobs > 0) $display("VECTOR TESTS PASSED");
+        if (jobs != EXPECTED_JOBS) begin
+            errors = errors + 1;
+            $display("FAIL: ran %0d jobs, expected %0d (missing or short vector files?)",
+                     jobs, EXPECTED_JOBS);
+        end
+        if (errors == 0) $display("VECTOR TESTS PASSED");
         else $fatal(1, "VECTOR TESTS FAILED");
         $finish;
     end

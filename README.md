@@ -33,7 +33,7 @@ controller FSM. Sources are TikZ (`fig_*.tex`).
 - `tb/` testbenches
 - `sim/` waveforms, logs, test vectors (`sim/vectors/`)
 - `scripts/` run and reference scripts
-- `synthesis/` FPGA reports
+- `synthesis/` synthesis scripts and results (`run_yosys.sh`, `yosys/summary.txt`)
 - `docs/` diagrams, `port_spec.md`
 - `report/` IEEE report
 
@@ -80,7 +80,7 @@ Files in `sim/vectors/` (hex, one word per line, for `$readmemh`):
 | `jobs_a.hex`, `jobs_b.hex` | `a_flat` / `b_flat` of one job, 72 bits | top-level and baseline tests |
 | `jobs_c.hex` | expected `c_flat`, 288 bits | top-level and baseline tests |
 | `jobs.txt` | name of each job | reading logs |
-| `trace_in.hex` | one compute cycle: `{valid_b_in, valid_a_in, b_in_flat, a_in_flat}`, 54 bits | scheduler test: expected `input_scheduler` output; array test: stimulus |
+| `trace_in.hex` | one compute cycle: `{valid_b_in, valid_a_in, b_in_flat, a_in_flat}`, 54 bits | expected `input_scheduler` output per cycle; stimulus for `tb_systolic_array` |
 | `trace_c.hex` | every accumulator after that cycle's edge, 288 bits | array test: cycle-by-cycle check of `systolic_array_3x3` |
 
 There are 112 jobs (12 directed, 100 random), 7 trace lines per job.
@@ -102,6 +102,31 @@ from synthesis. Both rows are measured by `tb_matmul_vectors.v` on the
 integrated design (112 jobs each). Both designs guarantee `c_flat` only while `done` is high: the
 baseline rewrites it during the next job, while the systolic top keeps the old
 result until its next capture.
+
+## Do the tests catch bugs?
+
+```
+python3 scripts/mutation_check.py      # about 30 s; never edits the repo
+```
+
+It copies the repo to a temporary folder, plants one realistic bug at a time
+(late skew, transposed B, unsigned multiply, 16-bit accumulator, missing
+clear, controller ending early or restarting while busy, input buffer not
+latching, baseline not restarting its sum) and reruns every testbench. Each
+bug must make at least one testbench fail. `--markdown` prints the table used
+in the report.
+
+## Synthesis (open source, no timing)
+
+```
+synthesis/run_yosys.sh                 # needs yosys; about 20 s
+```
+
+Writes `synthesis/yosys/summary.txt`: DSP, flip-flop and LUT counts for the
+systolic top and the baseline, with module boundaries kept (hierarchical) and
+flattened. The two differ because flattening removes the unused forwarding
+registers of the edge PEs. These are cell counts only; maximum frequency needs
+Vivado.
 
 ## Rules
 - Module ports must match `docs/port_spec.md`.

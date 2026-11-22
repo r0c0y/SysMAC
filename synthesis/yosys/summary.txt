@@ -1,0 +1,7 @@
+Yosys 0.71+post synth_xilinx, 7-series primitives, no timing
+
+design                      DSP48E1     FF    LUT  problems
+systolic_hier                     9    602    144         0
+systolic_flat                     9    446    118         0
+seq_matmul_hier                   1    474    408         0
+seq_matmul_flat                   1    474    408         0

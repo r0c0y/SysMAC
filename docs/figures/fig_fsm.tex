@@ -5,7 +5,7 @@
     tr/.style={->, line width=0.6pt},
     lab/.style={font=\scriptsize, inner sep=2pt, align=center}]
 
-  \node[st] (idle) at (0,0)      {IDLE\\[-1pt]{\scriptsize all low}};
+  \node[st] (idle) at (0,0)      {IDLE\\[-1pt]{\scriptsize controls low}};
   \node[st] (load) at (3.6,0)    {LOAD\\[-1pt]{\scriptsize load, clear}};
   \node[st] (comp) at (3.6,-2.5) {COMPUTE\\[-1pt]{\scriptsize run}};
   \node[st] (cap)  at (0,-2.5)   {CAPTURE\\[-1pt]{\scriptsize capture}};
@@ -20,5 +20,5 @@
   \draw[tr] (idle) edge[loop above, looseness=5] node[lab, above] {no start} (idle);
 
   \node[lab, anchor=north] at (0.3,-3.4)
-    {1 LOAD + 7 COMPUTE + 1 CAPTURE + 1 DONE. A start while not in IDLE is ignored.};
+    {1 LOAD + 7 COMPUTE + 1 CAPTURE + 1 DONE. A start while not in IDLE is ignored.\\$t$ keeps its last value outside COMPUTE; the scheduler ignores it while run = 0.};
 \end{tikzpicture}
