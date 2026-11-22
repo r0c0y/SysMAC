@@ -1,5 +1,8 @@
 {
   "name": "sysmac-vivado",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
-  "hostRequirements": { "cpus": 4, "memory": "16gb" }
+  "hostRequirements": { "cpus": 4, "memory": "16gb" },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": { "version": "latest" }
+  }
 }
